@@ -46,8 +46,10 @@ archivepath = os.path.join(dirpath, 'OneShot Save Utility Archive')
 if not os.path.exists(archivepath): os.makedirs(archivepath)
 
 # =====================
-# Save / load functions
+# Functions
 # =====================
+
+# This section grew more than I expected, TODO put in its own file
 
 def check_oneshot_running():
     # Random trivia: the psutil Process class has a oneshot() method. It weirded me out of a second when I came across it in the docs. :D
@@ -111,16 +113,20 @@ def delete():
     
     update_loadnamelist()
 
-
-def get_playername():
+def get_psettings():
     with open(psettingspath, 'rb') as psettings:
-        # Ruby marshal format is weird, you have to load past the first chunks of data to get to the name.
-        rb_load(psettings)
-        rb_load(psettings)
-        name = rb_load(psettings)
+        s = [rb_load(psettings), rb_load(psettings), rb_load(psettings)]
+        return s
+
+def set_psettings(data):
+    with open(psettingspath, 'wb') as psettings:
+        for d in data: rb_write(psettings, d)
         
-        namebox.delete(0, END)
-        namebox.insert(0, name)
+def get_playername():
+    name = get_psettings()[2]
+        
+    namebox.delete(0, END)
+    namebox.insert(0, name)
 
 def set_playername():
     if check_oneshot_running(): return
@@ -131,16 +137,40 @@ def set_playername():
         tkmessagebox.showwarning('No name entered', 'Please enter a name.')
         return
 
-    with open(psettingspath, 'rb') as psettings:
-        data = [rb_load(psettings), rb_load(psettings), name]
-    
-    with open(psettingspath, 'wb') as psettings:
-        for d in data: rb_write(psettings, d)
+    data = get_psettings()        
+    data[2] = name
+    set_psettings(data)
     
     tkmessagebox.showinfo('Name changed', 'Player name has been changed to {}.'.format(name))
     
     namebox.delete(0, END)
-    namebox.insert(0, name)        
+    namebox.insert(0, name)
+
+def get_playthroughs():
+    playthroughs = get_psettings()[1][1]
+    
+    playthroughbox.delete(0, END)
+    playthroughbox.insert(0, str(playthroughs))
+
+def set_playthroughs():
+    if check_oneshot_running(): return
+    
+    try:
+        playthroughs = int(playthroughbox.get().strip())
+    except ValueError:
+        tkmessagebox.showwarning('Invalid value', 'Number of playthroughs must be a number.')
+        return
+    
+    data = get_psettings()
+    data[1][1] = playthroughs
+    set_psettings(data)
+    
+    tkmessagebox.showinfo('Playthroughs changed', 'The number of playthroughs has been set to {}.'.format(str(playthroughs)))
+    
+    playthroughbox.delete(0, END)
+    playthroughbox.insert(0, str(playthroughs))
+
+# data[1][2] contains a value as well, but I have no idea what it does. Need to investigate further.
     
     
 # =================
@@ -154,6 +184,7 @@ root.title('OneShot Save Utility')
 root.config(bg = bgcolor)
 root.minsize(400, 600)
 
+# Save UI
 saveframe = Frame(root, bg = bgcolor)
 saveframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
 
@@ -165,6 +196,7 @@ Button(saveframe, text = 'Save', command = save, bg = bgcolor, fg = textcolor, f
 
 Frame(root, borderwidth = 1).pack(fill = X)
 
+# Load UI
 loadframe = Frame(root, bg = bgcolor)
 loadframe.pack(fill = BOTH, expand = 1, padx = 20, pady = 20)
 
@@ -182,6 +214,7 @@ Button(loadframe, text = 'Delete', command = delete, bg = bgcolor, fg = 'red', f
 
 Frame(root, borderwidth = 1).pack(fill = X)
 
+# Name UI
 nameframe = Frame(root, bg = bgcolor)
 nameframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
 
@@ -191,6 +224,24 @@ get_playername()
 namebox.pack(fill = X)
 
 Button(nameframe, text = 'Set', command = set_playername, bg = bgcolor, fg = textcolor, font = font).pack(side = LEFT, expand = 1)
+
+Frame(root, borderwidth = 1).pack(fill = X)
+
+# Variable UIs
+varframe = Frame(root, bg = bgcolor)
+varframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
+
+# Playthroughs Var UI
+playthroughframe = Frame(root, bg = bgcolor)
+playthroughframe.pack(side = LEFT, fill = BOTH, expand = 1, padx = 5, pady = 5)
+
+Label(playthroughframe, text = 'Playthroughs', bg = bgcolor, fg = textcolor, font = font).pack()
+playthroughbox = Entry(playthroughframe, selectbackground = highlightcolor, bg = bgcolor, fg = textcolor, font = font)
+get_playthroughs()
+playthroughbox.pack(fill = X)
+
+Button(playthroughframe, text = 'Set', command = set_playthroughs, bg = bgcolor, fg = textcolor, font = font).pack(expand = 1)
+
 
 # =========================
 # Run the Tkinter main loop
