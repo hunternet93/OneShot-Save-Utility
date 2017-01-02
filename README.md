@@ -10,7 +10,7 @@ A tool to manage save files for the game [OneShot](http://oneshot-game.com).
 
 ## Get
 
-[Download it here!]() *(Err, eventually. I gotta upload it first.)*
+[Download it here!](https://github.com/hunternet93/OneShot-Save-Utility/releases/)
 
 ## Usage
 
