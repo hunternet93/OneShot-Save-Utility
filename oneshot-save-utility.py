@@ -170,8 +170,31 @@ def set_playthroughs():
     playthroughbox.delete(0, END)
     playthroughbox.insert(0, str(playthroughs))
 
-# data[1][2] contains a value as well, but I have no idea what it does. Need to investigate further.
+def get_ruetimes():
+    ruetimes = get_psettings()[1][2]
     
+    ruebox.delete(0, END)
+    ruebox.insert(0, str(ruetimes))
+
+def set_ruetimes():
+    if check_oneshot_running(): return
+    
+    try:
+        ruetimes = int(ruebox.get().strip())
+    except ValueError:
+        tkmessagebox.showwarning('Invalid value', 'Number of times talked to Rue must be a number.')
+        return
+
+    
+    data = get_psettings()
+    data[1][2] = ruetimes
+    set_psettings(data)
+    
+    tkmessagebox.showinfo('Playthroughs changed', 'The number of times talked to Rue has been set to {}.'.format(str(ruetimes)))
+    
+    ruebox.delete(0, END)
+    ruebox.insert(0, str(ruetimes))
+
     
 # =================
 # Initialize the UI
@@ -241,6 +264,17 @@ get_playthroughs()
 playthroughbox.pack(fill = X)
 
 Button(playthroughframe, text = 'Set', command = set_playthroughs, bg = bgcolor, fg = textcolor, font = font).pack(expand = 1)
+
+# Times-talked-to-Rue Var UI
+rueframe = Frame(root, bg = bgcolor)
+rueframe.pack(side = RIGHT, fill = BOTH, expand = 1, padx = 5, pady = 5)
+
+Label(rueframe, text = 'Times Spoken to Rue', bg = bgcolor, fg = textcolor, font = font).pack()
+ruebox = Entry(rueframe, selectbackground = highlightcolor, bg = bgcolor, fg = textcolor, font = font)
+get_ruetimes()
+ruebox.pack(fill = X)
+
+Button(rueframe, text = 'Set', command = set_ruetimes, bg = bgcolor, fg = textcolor, font = font).pack(expand = 1)
 
 
 # =========================
