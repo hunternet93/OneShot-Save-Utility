@@ -36,10 +36,17 @@ else:
 # Find and initalize the OneShot directory
 # =========================================
 
-# Currently only supports Windows, support for Linux and MacOS will be added after OneShot is available on those platforms.
+# MacOS support has not been tested!
 
 if platform.system() == 'Windows':
     dirpath = os.path.join(os.path.expandvars('%appdata%'), 'OneShot')
+    oneshot_process = 'oneshot.exe'
+if platform.system() == 'Linux':
+    dirpath = os.path.join(os.path.expanduser('~'), '.local', 'share', 'Oneshot')
+    oneshot_process = 'oneshot'
+if platform.system() == 'Darwin': # MacOS
+    dirpath = os.path.join(os.path.expanduser('~'), 'Library', 'Preferences', 'Oneshot')
+    oneshot_process = 'oneshot'
 
 psettingspath = os.path.join(dirpath, 'p-settings.dat')
 archivepath = os.path.join(dirpath, 'OneShot Save Utility Archive')
@@ -53,7 +60,7 @@ if not os.path.exists(archivepath): os.makedirs(archivepath)
 
 def check_oneshot_running():
     # Random trivia: the psutil Process class has a oneshot() method. It weirded me out of a second when I came across it in the docs. :D
-    if 'oneshot.exe' in [psutil.Process(i).name() for i in psutil.pids()]:
+    if oneshot_process in [psutil.Process(i).name() for i in psutil.pids()]:
         tkmessagebox.showwarning('OneShot running', 'OneShot is currently running. Please close OneShot before using Oneshot Save Utility.')
         return True
     
