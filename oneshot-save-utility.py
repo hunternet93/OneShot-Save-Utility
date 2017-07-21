@@ -49,6 +49,11 @@ if platform.system() == 'Darwin': # MacOS
     oneshot_process = 'oneshot'
 
 psettingspath = os.path.join(dirpath, 'p-settings.dat')
+
+if not os.path.exists(psettingspath):
+    tkmessagebox.showerror('OneShot not initialized', "OneShot's settings have not been initialized. Please start a new OneShot game, save and exit OneShot, then restart OneShot Save Utility.")
+    quit()
+
 archivepath = os.path.join(dirpath, 'OneShot Save Utility Archive')
 if not os.path.exists(archivepath): os.makedirs(archivepath)
 
@@ -120,6 +125,27 @@ def delete():
     
     update_loadnamelist()
 
+def reset_current():
+    if check_oneshot_running(): return
+    
+    if tkmessagebox.askyesno('Confirm reset', 'Reset the current playthrough?'):
+        try:
+            os.unlink(os.path.join(dirpath, 'save.dat'))
+        except FileNotFoundError: pass
+
+        tkmessagebox.showinfo('Playthrough reset', 'The current playthrough has been reset.')
+
+def reset_full():
+    if check_oneshot_running(): return
+    
+    if tkmessagebox.askyesno('Confirm full reset', 'Completely reset the game?'):
+        try:
+            os.unlink(os.path.join(dirpath, 'save.dat'))
+            os.unlink(os.path.join(dirpath, 'p-settings.dat'))
+        except FileNotFoundError: pass
+
+        tkmessagebox.showinfo('Game reset', 'The game has been reset.')
+        
 def get_psettings():
     with open(psettingspath, 'rb') as psettings:
         s = [rb_load(psettings), rb_load(psettings), rb_load(psettings)]
@@ -177,6 +203,36 @@ def set_playthroughs():
     playthroughbox.delete(0, END)
     playthroughbox.insert(0, str(playthroughs))
 
+def get_ptype():
+    s = get_psettings()[0]
+    
+    if s[9]: ptypevar.set(3) # Memory
+    elif s[1]: ptypevar.set(2) # Solstice
+    else: ptypevar.set(1) # First
+    
+def set_ptype():
+    if check_oneshot_running(): return
+
+    ptype = ptypevar.get()
+    
+    data = get_psettings()
+    if ptype == 3:
+        data[0][1] = False
+        data[0][9] = True
+        text = 'Memory'
+    elif ptype == 2:
+        data[0][1] = True
+        data[0][9] = False
+        text = 'Solstice'
+    elif ptype == 1:
+        data[0][1] = False
+        data[0][9] = False
+        text = 'First'
+
+    set_psettings(data)
+    
+    tkmessagebox.showinfo('Playthrough Type changed', 'The playthrough type has been set to {}.\nThis will take effect on the next playthrough.'.format(text))
+    
 def get_ruetimes():
     ruetimes = get_psettings()[1][2]
     
@@ -201,7 +257,6 @@ def set_ruetimes():
     
     ruebox.delete(0, END)
     ruebox.insert(0, str(ruetimes))
-
     
 # =================
 # Initialize the UI
@@ -212,7 +267,7 @@ def set_ruetimes():
 root = Tk()
 root.title('OneShot Save Utility')
 root.config(bg = bgcolor)
-root.minsize(400, 600)
+root.minsize(600, 600)
 
 # Save UI
 saveframe = Frame(root, bg = bgcolor)
@@ -244,6 +299,14 @@ Button(loadframe, text = 'Delete', command = delete, bg = bgcolor, fg = 'red', f
 
 Frame(root, borderwidth = 1).pack(fill = X)
 
+# Reset UI
+
+resetframe = Frame(root, bg = bgcolor)
+resetframe.pack(fill = BOTH, expand = 1, padx = 20, pady = 20)
+
+Button(resetframe, text = 'Reset Current Playthrough', command = reset_current, bg = bgcolor, fg = textcolor, font = font).pack(side = LEFT, expand = 1)
+Button(resetframe, text = 'Full Reset', command = reset_full, bg = bgcolor, fg = 'red', font = font).pack(side = RIGHT, expand = 1)
+
 # Name UI
 nameframe = Frame(root, bg = bgcolor)
 nameframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
@@ -258,11 +321,14 @@ Button(nameframe, text = 'Set', command = set_playername, bg = bgcolor, fg = tex
 Frame(root, borderwidth = 1).pack(fill = X)
 
 # Variable UIs
-varframe = Frame(root, bg = bgcolor)
-varframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
+ptframe = Frame(root, bg = bgcolor)
+ptframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
+
+mframe = Frame(root, bg = bgcolor)
+mframe.pack(fill = BOTH, expand = 1, padx = 5, pady = 5)
 
 # Playthroughs Var UI
-playthroughframe = Frame(root, bg = bgcolor)
+playthroughframe = Frame(ptframe, bg = bgcolor)
 playthroughframe.pack(side = LEFT, fill = BOTH, expand = 1, padx = 5, pady = 5)
 
 Label(playthroughframe, text = 'Playthroughs', bg = bgcolor, fg = textcolor, font = font).pack()
@@ -272,9 +338,24 @@ playthroughbox.pack(fill = X)
 
 Button(playthroughframe, text = 'Set', command = set_playthroughs, bg = bgcolor, fg = textcolor, font = font).pack(expand = 1)
 
+# Playthrough Type Var UI
+ptypeframe = Frame(ptframe, bg = bgcolor)
+ptypeframe.pack(side = RIGHT, fill = BOTH, expand = 1, padx = 5, pady = 5)
+
+Label(ptypeframe, text = 'Playthrough Type', bg = bgcolor, fg = textcolor, font = font).pack()
+
+ptypevar = IntVar(master = root)
+Radiobutton(ptypeframe, text = 'First', variable = ptypevar, value = 1, command = set_ptype,
+            activebackground = bgcolor, activeforeground = textcolor, selectcolor = highlightcolor, bg = bgcolor, fg = textcolor, font = font).pack()
+Radiobutton(ptypeframe, text = 'Solstice', variable = ptypevar, value = 2, command = set_ptype,
+            activebackground = bgcolor, activeforeground = textcolor, selectcolor = highlightcolor, bg = bgcolor, fg = textcolor, font = font).pack()
+Radiobutton(ptypeframe, text = 'Memory', variable = ptypevar, value = 3, command = set_ptype,
+            activebackground = bgcolor, activeforeground = textcolor, selectcolor = highlightcolor, bg = bgcolor, fg = textcolor, font = font).pack()
+get_ptype()
+
 # Times-talked-to-Rue Var UI
-rueframe = Frame(root, bg = bgcolor)
-rueframe.pack(side = RIGHT, fill = BOTH, expand = 1, padx = 5, pady = 5)
+rueframe = Frame(mframe, bg = bgcolor)
+rueframe.pack(side = LEFT, fill = BOTH, expand = 1, padx = 5, pady = 5)
 
 Label(rueframe, text = 'Times Spoken to Rue', bg = bgcolor, fg = textcolor, font = font).pack()
 ruebox = Entry(rueframe, selectbackground = highlightcolor, bg = bgcolor, fg = textcolor, font = font)
@@ -282,7 +363,6 @@ get_ruetimes()
 ruebox.pack(fill = X)
 
 Button(rueframe, text = 'Set', command = set_ruetimes, bg = bgcolor, fg = textcolor, font = font).pack(expand = 1)
-
 
 # =========================
 # Run the Tkinter main loop
