@@ -24,12 +24,8 @@ import shutil
 import psutil
 import os
 
-if platform.python_version_tuple()[0] == '2':
-    from Tkinter import *
-    import tkMessageBox as tkmessagebox
-else:
-    from tkinter import *
-    import tkinter.messagebox as tkmessagebox
+from tkinter import *
+import tkinter.messagebox as tkmessagebox
 
 
 # =========================================
