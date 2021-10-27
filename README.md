@@ -28,5 +28,5 @@ To run OneShot Save Utility from source you'll need [Python](https://python.org)
 
 ## Credits
 
-Oneshot Save Utility was created by Isaac "hunternet93 / Inanity?" Smith
+Oneshot Save Utility was created by Hunter Smith
 Oneshot was created by Team Oneshot
